@@ -1,11 +1,19 @@
-function [r,p,BA,ra,permrat,ratold,permratold]=ba_feedbackmodel(BA,Z,totalarea,futureZ,option,capannual,nmem,firehistory,~)
+function [r,p,BA,ra,permrat,ratold,permratold]=ba_feedbackmodel_2var(BA,Z,totalarea,futureZ,option,capannual,nmem,firehistory,~)
 
 % experimental function that builds in a negative feedback to burned area
 nensemble=10000;
-Z(6:end+5)=Z;
-Z5=movmean(Z,[5 0]);
-Z5=Z5(6:end);
-Z=Z(6:end);
+Z(6:end+5,:)=Z;
+Z5=movmean(Z,[5 0],1);
+Z5=Z5(6:end,:);
+Z=Z(6:end,:);
+
+%Zveg=Z(:,1)+Z(:,2);
+Zveg=Z(:,1)-Z(:,2);
+Zveg=(Zveg-mean(Zveg))/std(Zveg);
+Zveg(6:end+5)=Zveg;
+Zveg5=movmean(Zveg,[5 0],1);
+Zveg5=Zveg5(6:end);
+Zveg=Zveg(6:end,:);
 
 
 if nargin==7 % if you do not have fire history layer
@@ -23,7 +31,7 @@ end
 % reduce available area to burn as a function of fire history
 addrat=0;
 for i=1:length(BA)
-    [rat,addrat,firehistory]=firehistorybufferadv(totalarea,firehistory,option,nmem,Z(i),Z5(i),addrat,0.1);
+    [rat,addrat,firehistory]=firehistorybufferadv(totalarea,firehistory,option,nmem,Zveg(i),Zveg5(i),addrat,0.1);
     firehistory(end+1)=BA(i)/totalarea;
     firehistory=firehistory(2:end);
     rrr(i)=rat+addrat;
@@ -32,14 +40,13 @@ end
 rat=rrr;
 Z2=Z;
 
-
 % statistics about the model fit
-a2=fitlm((Z2'),log10(BA./(1-rat)'));
+a2=fitlm((Z2),log10(BA./(1-rat)'));
 mm=predict(a2,Z2);mm=(10.^mm)./(1-rat)';
-[r(1),p(1)]=corr(log10(BA./(1-rat)'),Z2);
-[r(2),p(2)]=corr(detrend(log10(BA./(1-rat)')),detrend(Z2));
-[r(3),p(3)]=corr(log10(BA(1:25))./(1-rat(1:25)'),Z2(1:25));
-[r(4),p(4)]=corr(log10(BA(26:50))./(1-rat(26:50)'),Z2(26:50));
+[r(1),p(1)]=corr(log10(BA./(1-rat)'),mm);
+[r(2),p(2)]=corr(detrend(log10(BA./(1-rat)')),detrend(mm));
+[r(3),p(3)]=corr(log10(BA(1:25))./(1-rat(1:25)'),mm(1:25));
+[r(4),p(4)]=corr(log10(BA(26:50))./(1-rat(26:50)'),mm(26:50));
 
 %r,p,BA,ra,permrat,ratold,permratold
 
@@ -68,8 +75,18 @@ ra(startyr-length(rat):startyr-1,1)=rat;
 BA(startyr-length(rat):startyr-1,1)=BA;
 if option==0 startyr=1;end  % this is for no-feedback model
 
+
 % starting in 1950 iterative forward
-Z5(6:156)=movmean(futureZ(1:151),[5 0]);
+Z5(6:156,:)=movmean(futureZ(1:151,:),[5 0]);
+
+
+Zveg=futureZ(:,1)+futureZ(:,2);
+Zveg=(Zveg-mean(Zveg))/std(Zveg);
+Zveg(6:end+5)=Zveg;
+Zveg5=movmean(Zveg,[5 0],1);
+Zveg5=Zveg5(6:end);
+Zveg=Zveg(6:end,:);
+
 addrat=0;
 
 initfhist=firehistory;
@@ -79,9 +96,9 @@ for kk=1:nensemble
     end
     firehistory=initfhist;addrat=0;
     for i=startyr:151
-        [rat,addrat,firehistory]=firehistorybufferadv(totalarea,firehistory,option,nmem,futureZ(i),Z5(i),addrat,.1);
+        [rat,addrat,firehistory]=firehistorybufferadv(totalarea,firehistory,option,nmem,Zveg(i),Zveg5(i),addrat,.1);
         noise=normrnd(0,sigma,1,1);
-        BA(i,kk)=10.^(predict(a2,futureZ(i))+noise).*(1-rat);
+        BA(i,kk)=10.^(predict(a2,futureZ(i,:))+noise).*(1-rat);
 
         % limit such that the burned area annually can not
         % exceed more than X% of existing land

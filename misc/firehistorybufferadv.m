@@ -1,4 +1,4 @@
-function [rat,permrat,firehistory]=firehistorybuffer(totalarea,firehistory,option,nmem,Z,Z5,permrat,max_norecovery);
+function [rat,permrat,firehistory]=firehistorybufferadv(~,firehistory,option,nmem,Z,Z5,permrat,max_norecovery);
 
 
 % Z5 is the mean aridity from the past 5-years, this is used to immediately
@@ -28,7 +28,6 @@ permrat=permrat+addrat;
 shorten(Z>2)=round(nmem/3);
 shorten(Z>0 & Z<=2)=round(nmem/3*Z(Z>0 & Z<=2)/2);
 shorten(Z<=0)=0;
-%shorten=(cos(max(min(2,Z)-2,-2)*90*pi/180)+1)/2;
 firehistory=firehistory(1+shorten:end,:);
 nmem=nmem-shorten;
 
