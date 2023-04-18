@@ -75,7 +75,8 @@ Prepare GCM data for scenarios analyses.
 - 1_9_calculate_future_scenarios.m
 Computes future impacts of anthropogenic climate change.
 
-
+- 1_10_calculate_future_scenarios_tp.m
+Computes future impacts of anthropogenic climate change with the model that includes the precipitation effect.
 
 Scripts to reproduce the results in the paper.
 
@@ -86,10 +87,17 @@ Build and test the best climate-fire model through out-of-sample calibration.
 Validate the best climate-fire model through out-of-sample tenfold validation. Plot figure 1 and S2.
 
 - 2_3_attribution.m
-Compute impacts of anthropogenic climate change. Plot figure 2.
+Compute impacts of anthropogenic climate change. Plot figure 2 and S4.
 
-- 2_4_plot_future_scenarios.m
-Compute future BA simulations. Plot figure 3.
+- 2_4_attribution_tp.m
+Compute anthropogenic climate change impacts with the model that includes the precipitation effect. 
+Plot figure S5.
+
+- 2_5_plot_future_scenarios.m
+Compute future BA simulations.
+
+- 2_5_plot_future_scenarios_tp.m
+Compute future BA simulations with the model that includes the precipitation effect. Plot figure 3.
 
 
 In the folder "misc" there are additional script files useful for the execution of the main script files described above.
