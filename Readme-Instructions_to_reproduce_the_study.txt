@@ -94,10 +94,13 @@ Compute anthropogenic climate change impacts with the model that includes the pr
 Plot figure S5.
 
 - 2_5_plot_future_scenarios.m
-Compute future BA simulations.
+Compute future BA simulations. To run this script you have to download the data from: 
+https://univmurcia-my.sharepoint.com/:f:/r/personal/marco_turco_um_es/Documents/gcms_pnas_2022?csf=1&web=1&e=ak4Qql
 
 - 2_5_plot_future_scenarios_tp.m
 Compute future BA simulations with the model that includes the precipitation effect. Plot figure 3.
+To run this script you have to download the data from: 
+https://univmurcia-my.sharepoint.com/:f:/r/personal/marco_turco_um_es/Documents/gcms_pnas_2022?csf=1&web=1&e=ak4Qql
 
 
 In the folder "misc" there are additional script files useful for the execution of the main script files described above.
