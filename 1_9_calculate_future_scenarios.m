@@ -63,11 +63,8 @@ for iyear=1:length(years_study)
     i2 = (iyear - 1) * 12 + best_stop_tx;
     TSMAX_obs(iyear) = mean(nclimgrid(1,i1:i2));
 end
-%std over the baseline period 1995-2014
-[~,~,iok]=intersect(base_period, years_study);
-avg=nanmean(TSMAX_obs(iok),1);
-devstd=std(TSMAX_obs(iok),'omitnan');
-Z=(TSMAX_obs-avg)/devstd;
+%Z=(TSMAX_obs-avg)/devstd;
+Z=(TSMAX_obs-mean(TSMAX_obs))./std(TSMAX_obs); %standardized over the 1971-2021 period
 
 %% GCM
 
@@ -109,7 +106,7 @@ for imodel=1:length(models)
     imembers=find(strcmp(model,models(imodel)));
     members=member(imembers)
     
-    pause
+    
 end
 
 
@@ -205,15 +202,21 @@ wus=repmat(wus,[1 3]);
 wus=wus(:);
 
 
+
+
+model_name(imodel)
 % loop over cmip models
 for imodel=1:nmod
     imodel
-
     % spin up historical fuel estimates based on fire activity
     [firehistory,rat1(:)]=spinupfirehistory(wus,option-1,totalarea,nmem);
     fire1950=firehistory(:,end-20);
     firehistory=firehistory(:,end);
-    [r,p,FFA,ra,addr,raold,permold]=ba_feedbackmodel(BA,Z,totalarea,cmip6_ssp245(:,imodel),option-1,capannual,nmem,firehistory,fire1950);
+
+    avg_tsmax=nanmean(cmip6_ssp245(22:71,imodel),1);
+    devstd_tsmax=std(cmip6_ssp245(22:71,imodel),'omitnan');
+    futureZ=(cmip6_ssp245(:,imodel)-avg_tsmax)/devstd_tsmax;
+    [r,p,FFA,ra,addr,raold,permold]=ba_feedbackmodel(BA,Z,totalarea,futureZ,option-1,capannual,nmem,firehistory,fire1950);
     % if model==1
     %    rat1(69:105)=raold+permold;
     % end
@@ -223,8 +226,16 @@ for imodel=1:nmod
     %arat(:,:,model)=addr;
     %oldrat(:,:)=raold;
 
-    [r,p,FFA,ra,addr,raold,permold]=ba_feedbackmodel(BA,Z,totalarea,cmip6_ssp585(:,imodel),option-1,capannual,nmem,firehistory,fire1950);
-    % if model==1
+    % spin up historical fuel estimates based on fire activity
+    [firehistory,rat1(:)]=spinupfirehistory(wus,option-1,totalarea,nmem);
+    fire1950=firehistory(:,end-20);
+    firehistory=firehistory(:,end); % if model==1
+    
+    avg_tsmax=nanmean(cmip6_ssp585(22:71,imodel),1);
+    devstd_tsmax=std(cmip6_ssp585(22:71,imodel),'omitnan');
+    futureZ=(cmip6_ssp585(:,imodel)-avg_tsmax)/devstd_tsmax;
+    [r,p,FFA,ra,addr,raold,permold]=ba_feedbackmodel(BA,Z,totalarea,futureZ,option-1,capannual,nmem,firehistory,fire1950);
+    
     %    rat1(69:105)=raold+permold;
     % end
     ratg_ssp585(:,:,imodel)=ra;
@@ -235,6 +246,9 @@ for imodel=1:nmod
 
 end
 
+figure; plot(ra), ylim([0 1])
+
+figure; plot(burned_ssp585(:,:,imodel))
 
 %% calculate ensemble means
 

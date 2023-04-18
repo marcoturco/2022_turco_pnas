@@ -42,8 +42,7 @@ TSMAX_obs_anom=scale_base_period(TSMAX_obs,base_period,years_climate);
 figure;plot(TSMAX_obs_anom)
 %% hist-nat
 %extract nome model and lon lat at 1??x1??
-
-nomefile = [dir_data,'gcms/result_220119_01_tasmax-histall-histnat.mat'];
+nomefile = ['/Users/marco/Documents/dati/gcm_data_cal/Turco-PNAS-2022-CMIP6/result_220119_01_tasmax-histall-histnat.mat'];
 load(nomefile)
 lat1=lat;
 lon1=lon;
@@ -230,8 +229,8 @@ years_hist=1950:2021;
 base_period=1960:1982;
 dir_gcm='~/Documents/dati/gcm_data_cal/'
 dir_data='~/Dropbox/estcena/scripts/fires_california/data_def/';
-best_start_tx=4;
-best_stop_tx=10;
+best_start_pr=4;
+best_stop_pr=10;
 max_members=50;
 
 %% load domain
@@ -247,21 +246,11 @@ yv=[dum;dum(1)]; clear dum
 
 filename = [dir_data,'nclimgrid/nclimgrid.mat'];
 load(filename);
-TSMAX_obs = zeros(length(years_climate),1)*NaN;
-for iyear=1:length(years_climate)
-    i1 = (iyear - 1) * 12 + best_start_tx;
-    i2 = (iyear - 1) * 12 + best_stop_tx;
-    TSMAX_obs(iyear) = mean(nclimgrid(1,i1:i2));
-end
-%figure;plot(TSMAX_obs)
-TSMAX_obs_anom=scale_base_period(TSMAX_obs,base_period,years_climate);
-figure;plot(TSMAX_obs_anom)
-
 
 PREC_obs = zeros(length(years_climate),1)*NaN;
 for iyear=1:length(years_climate)
-    i1 = (iyear - 1) * 12 + best_start_tx;
-    i2 = (iyear - 1) * 12 + best_stop_tx;
+    i1 = (iyear - 1) * 12 + best_start_pr;
+    i2 = (iyear - 1) * 12 + best_stop_pr;
     PREC_obs(iyear) = sum(nclimgrid(2,i1:i2));
 end
 %figure;plot(TSMAX_obs)
@@ -270,7 +259,7 @@ figure;plot(PREC_obs)
 
 %% hist-nat
 %extract nome model and lon lat at 1??x1??
-nomefile = [dir_data,'gcms/result_220119_01_tasmax-histall-histnat.mat'];
+nomefile = ['/Users/marco/Documents/dati/gcm_data_cal/Turco-PNAS-2022-CMIP6/result_220119_01_tasmax-histall-histnat.mat'];
 load(nomefile)
 lat1=lat;
 lon1=lon;
@@ -285,7 +274,7 @@ for i=1:length(lon1)
 end
 
 % load hist-nat
-nomefile = ['/Users/marco/Downloads/Turco-PNAS-2022-CMIP6/result_221203_01_pr-histnat_12_nointerp.mat'];
+nomefile = ['/Users/marco/Documents/dati/gcm_data_cal/Turco-PNAS-2022-CMIP6/result_221203_01_pr-histnat_12_nointerp.mat'];
 load(nomefile)
 %[member{12}]
 
@@ -330,8 +319,8 @@ for imodel=1:length(model)
         pr_nat(:)=nanmean(tmp(:,in),2);
         %TSMAX=NaN*zeros(length(years_climate),1)
         for iyear=1:length(years_gcm)
-            i1 = (iyear - 1) * 12 + best_start_tx;
-            i2 = (iyear - 1) * 12 + best_stop_tx;
+            i1 = (iyear - 1) * 12 + best_start_pr;
+            i2 = (iyear - 1) * 12 + best_stop_pr;
             dum(iyear) = mean(pr_nat(i1:i2));
         end
         clear pr_nat
@@ -401,8 +390,8 @@ for imodel=1:length(models_u)
         end        
         pr_gcm=[pr_hist; pr_ssp245(1:84)]; %hist up to 2014, ssp245 up to 2021, 84 months
         for iyear=1:length(years_hist)
-            i1 = (iyear - 1) * 12 + best_start_tx;
-            i2 = (iyear - 1) * 12 + best_stop_tx;
+            i1 = (iyear - 1) * 12 + best_start_pr;
+            i2 = (iyear - 1) * 12 + best_stop_pr;
             PREC(iyear) = mean(pr_gcm(i1:i2));
         end
         %figure;plot(tx_gcm)
@@ -441,11 +430,10 @@ filename = [dir_data 'gcms/GCMs_attribution_prec.mat'];
 save(filename,'model_com','model_member_num','PREC_ALL','PREC_NAT','PREC_ALL_ANOM','PREC_NAT_ANOM')  
 
 %% VPD
-
 clear all,clc,close all
-addpath('E:/Dropbox/Dropbox/fires_california/scripts_def/misc/')
-%% savepath
-workPath='C:/Users/herreras/Documents/Publications/Articulos/2022_Turco_PNAS/';cd([workPath])
+addpath '~/Dropbox/estcena/scripts/fires_california/scripts_def/misc/'
+savepath
+workPath=[pwd];cd([workPath])
 
 %% misc
 years_climate=1960:2021;
@@ -456,8 +444,8 @@ years_scen=2015:2100;
 years_hist=1950:2021;
 base_period=1960:1982;
 
-dir_gcm='C:/Users/herreras/Documents/Publications/Articulos/2022_Turco_PNAS/';
-dir_data='E:/Dropbox/Dropbox/fires_california/data_def/';
+dir_gcm='~/Documents/dati/gcm_data_cal/Turco-PNAS-2022-CMIP6/'
+dir_data='~/Dropbox/estcena/scripts/fires_california/data_def/';
 best_start_tx=4;
 best_stop_tx=10;
 max_members=50;
@@ -486,7 +474,7 @@ VPD_obs_anom=scale_base_period(VPD_obs,base_period,years_climate);
 
 %% hist-nat
 %extract nome model and lon lat at 1??x1??
-nomefile = [dir_data,'gcms/result_220119_01_tasmax-histall-histnat.mat'];
+nomefile = [dir_gcm,'result_220119_01_tasmax-histall-histnat.mat'];
 load(nomefile)
 lat1=lat;
 lon1=lon;
@@ -888,5 +876,5 @@ VPD_ALL=VPD_ALL_MIX(:,iok_all);
 VPD_ALL_ANOM=VPD_ALL_ANOM_MIX(:,iok_all);
 
 %% save outputs
-filename = [dir_data 'gcms/GCMs_attribution_vpd_sixto.mat'];
+filename = [dir_data 'gcms/GCMs_attribution_vpd.mat'];
 save(filename,'model_nat','model_all','VPD_ALL','VPD_NAT','VPD_ALL_ANOM','VPD_NAT_ANOM')  

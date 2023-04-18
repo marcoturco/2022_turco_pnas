@@ -53,6 +53,8 @@ PREC_4_10 = zeros(length(years),1)*NaN;
 PREC_5_10 = zeros(length(years),1)*NaN;
 PREC_5_9 = zeros(length(years),1)*NaN;
 PREC_1_12 = zeros(length(years),1)*NaN;
+PREC_7_9 = zeros(length(years),1)*NaN;
+PREC_6_9 = zeros(length(years),1)*NaN;
 
 for iyear=1:length(years) 
   i1 = (iyear - 1) * 12 + best_start_tx;
@@ -77,7 +79,13 @@ for iyear=1:length(years)
   VPD_5_9(iyear) = mean(vpd_prism(i3:i4));
   i3 = (iyear - 1) * 12 + 1;
   i4 = (iyear - 1) * 12 + 12;
-  PREC_1_12(iyear) = sum(nclimgrid(2,i3:i4));  
+  PREC_1_12(iyear) = sum(nclimgrid(2,i3:i4)); 
+  i3 = (iyear - 1) * 12 + 7;
+  i4 = (iyear - 1) * 12 + 9;
+  PREC_7_9(iyear) = sum(nclimgrid(2,i3:i4)); 
+  i3 = (iyear - 1) * 12 + 6;
+  i4 = (iyear - 1) * 12 + 9;
+  PREC_6_9(iyear) = sum(nclimgrid(2,i3:i4)); 
 end
 
 mean(PREC_1_12(26:51))-mean(PREC_1_12(1:25))
@@ -85,15 +93,17 @@ TSMAX_4_10_orig=TSMAX_4_10;
 PREC_4_10_orig=PREC_4_10;
 
 %figure;plot(TSMAX)
-TSMAX_3_10=scale_base_period(TSMAX_3_10,base_period,years);
-TSMAX_4_10=scale_base_period(TSMAX_4_10,base_period,years);
-TSMAX_5_10=scale_base_period(TSMAX_5_10,base_period,years);
-TSMAX_5_9=scale_base_period(TSMAX_5_9,base_period,years);
+TSMAX_3_10=standardize(TSMAX_3_10);
+TSMAX_4_10=standardize(TSMAX_4_10);
+TSMAX_5_10=standardize(TSMAX_5_10);
+TSMAX_5_9=standardize(TSMAX_5_9);
 %figure;plot(TSMAX)
-PREC_3_10=scale_base_period(PREC_3_10,base_period,years);
-PREC_4_10=scale_base_period(PREC_4_10,base_period,years);
-PREC_5_10=scale_base_period(PREC_5_10,base_period,years);
-PREC_5_9=scale_base_period(PREC_5_9,base_period,years);
+PREC_3_10=standardize(PREC_3_10);
+PREC_4_10=standardize(PREC_4_10);
+PREC_5_10=standardize(PREC_5_10);
+PREC_5_9=standardize(PREC_5_9);
+PREC_7_9=standardize(PREC_7_9);
+PREC_6_9=standardize(PREC_6_9);
 
 %% correlations
 clc
@@ -121,11 +131,16 @@ clc
 [rho,sig]=corr_boot((log(FIRE)),(PREC_5_10))
 [rho,sig]=corr_boot((log(FIRE)),(PREC_4_10))
 [rho,sig]=corr_boot((log(FIRE)),(PREC_3_10))
+[rho,sig]=corr_boot((log(FIRE)),(PREC_7_9))
+[rho,sig]=corr_boot((log(FIRE)),(PREC_6_9))
+
 clc
 [rho,sig]=corr_boot(detrend(log(FIRE)),detrend(PREC_5_9))
 [rho,sig]=corr_boot(detrend(log(FIRE)),detrend(PREC_5_10))
 [rho,sig]=corr_boot(detrend(log(FIRE)),detrend(PREC_4_10))
 [rho,sig]=corr_boot(detrend(log(FIRE)),detrend(PREC_3_10))
+[rho,sig]=corr_boot(detrend(log(FIRE)),detrend(PREC_7_9))
+[rho,sig]=corr_boot(detrend(log(FIRE)),detrend(PREC_6_9))
 clc
 [rho,sig]=corr_boot(PREC_5_9,VPD_5_9)
 [rho,sig]=corr_boot(PREC_5_10,VPD_5_10)
@@ -159,20 +174,7 @@ clc
 [rho,sig]=corr_boot(detrend(TSMAX_3_10),detrend(PREC_3_10))
 clc
 [rho,sig] = partialcorr(TSMAX_4_10,log(FIRE),PREC_4_10)
-
-
-%% regression model tsmax prec 1971-2021
-yor=log(FIRE);
-Xorig1 = [ones(size(TSMAX_4_10,1),1) TSMAX_4_10 PREC_4_10]; %osservati
-[B1,BINT,res0,RINT,STATS1] = regress((yor),Xorig1,alpha);
-STATS1
-[~,akc]=aic2(length(find(isnan(yor)==0)),size(Xorig1,2),nanvar(res0),nanvar((yor)))
-bootdat = [(yor),Xorig1];
-bootb1 = bootstrp(NB, @(x) regress(x(:,1),x(:,2:end)),bootdat);
-bootCI1=prctile(bootb1,[2.5 97.5]);
-format longG
-[B1(2) bootCI1(1,2)'  bootCI1(2,2)']
-[B1(3) bootCI1(1,3)'  bootCI1(2,3)']
+[rho,sig] = partialcorr(TSMAX_4_10,log(FIRE),PREC_7_9)
 
 
 %% plot Fig. 1a
@@ -244,6 +246,32 @@ mean(FIRE(26:51))/mean(FIRE(1:25))
 
 mean(FIRE(end-19:end))
 
+
+
+%% regression model tsmax prec 1971-2021
+yor=log(FIRE);
+Xorig1 = [ones(size(TSMAX_4_10,1),1) TSMAX_4_10 PREC_7_9]; %osservati
+[B1,BINT,res0,RINT,STATS1] = regress((yor),Xorig1,alpha);
+STATS1
+[~,akc]=aic2(length(find(isnan(yor)==0)),size(Xorig1,2),nanvar(res0),nanvar((yor)))
+bootdat = [(yor),Xorig1];
+bootb1 = bootstrp(NB, @(x) regress(x(:,1),x(:,2:end)),bootdat);
+bootCI1=prctile(bootb1,[2.5 97.5]);
+format longG
+[B1(2) bootCI1(1,2)'  bootCI1(2,2)']
+[B1(3) bootCI1(1,3)'  bootCI1(2,3)']
+
+yor=log(FIRE);
+Xorig1 = [ones(size(TSMAX_4_10,1),1) TSMAX_4_10 PREC_7_9]; %osservati
+[B1,BINT,res0,RINT,STATS1] = regress((yor),Xorig1,alpha);
+STATS1
+[~,akc]=aic2(length(find(isnan(yor)==0)),size(Xorig1,2),nanvar(res0),nanvar((yor)))
+bootdat = [(yor),Xorig1];
+bootb1 = bootstrp(NB, @(x) regress(x(:,1),x(:,2:end)),bootdat);
+bootCI1=prctile(bootb1,[2.5 97.5]);
+format longG
+[B1(2) bootCI1(1,2)'  bootCI1(2,2)']
+[B1(3) bootCI1(1,3)'  bootCI1(2,3)']
 
 
 %% regression model tsmax 1971-2021
@@ -370,8 +398,485 @@ print( gcf, '-dpdf', file ,'-painters')
 [r p]=corrcoef((yor),log(Ymed),'rows','complete')
 [r p]=corrcoef((yor),TSMAX_4_10,'rows','complete')
 
+
+%% stability only prec
+
+yor=log(FIRE);
+Xorig1 = [ones(size(PREC_7_9,1),1) (PREC_7_9)]; %osservati
+[B1,BINT,R,RINT,STATS1] = regress((yor),Xorig1,alpha);
+STATS1
+bootdat1 = [(yor),Xorig1];
+bootb1 = bootstrp(NB, @(x) regress(x(:,1),x(:,2:end)),bootdat1);
+bootCI1=prctile(bootb1,[2.5 97.5])
+B1
+
+%detrend
+yor=log(FIRE);
+Xorig1 = [ones(size(PREC_7_9,1),1) detrend(PREC_7_9)]; %osservati
+[B_detrend,BINT,R,RINT,STATS1] = regress(detrend(yor),Xorig1,alpha);
+STATS1
+bootdat1 = [detrend(yor),Xorig1];
+bootb_detrend = bootstrp(NB, @(x) regress(x(:,1),x(:,2:end)),bootdat1);
+bootCI_detrend=prctile(bootb_detrend,[2.5 97.5])
+B_detrend
+
+%first-half period
+Xorig1 = [ones(size(PREC_7_9(1:25),1),1) (PREC_7_9(1:25))]; %osservati
+[B11] = regress((yor(1:25)),Xorig1,alpha);
+STATS1
+bootdat1 = [(yor(1:25)),Xorig1];
+bootb11 = bootstrp(NB, @(x) regress(x(:,1),x(:,2:end)),bootdat1);
+bootCI11=prctile(bootb11,[2.5 97.5])
+
+%second-half period
+Xorig1 = [ones(size(PREC_7_9(26:51),1),1) (PREC_7_9(26:51))]; %osservati
+[B21] = regress((yor(26:51)),Xorig1,alpha);
+bootdat1 = [(yor(26:51)),Xorig1];
+bootb21 = bootstrp(NB, @(x) regress(x(:,1),x(:,2:end)),bootdat1);
+bootCI21=prctile(bootb21,[2.5 97.5])
+
+%25 driest years
+nextremes=25;
+[~,i_sorted]=sort(PREC_7_9);
+Xorig1 = [ones(size(PREC_7_9(1:nextremes),1),1) (PREC_7_9(i_sorted(1:nextremes)))]; %osservati
+[B_smallest] = regress((yor(i_sorted(1:nextremes))),Xorig1,alpha);
+bootdat1 = [(yor(i_sorted(1:nextremes))),Xorig1];
+bootb_coldest = bootstrp(NB, @(x) regress(x(:,1),x(:,2:end)),bootdat1);
+bootCI_smallest=prctile(bootb_coldest,[2.5 97.5])
+
+%25 wettest years
+[~,i_sorted]=sort(PREC_7_9,'descend');
+Xorig1 = [ones(size(PREC_7_9(1:nextremes),1),1) (PREC_7_9(i_sorted(1:nextremes)))]; %osservati
+[B_largest] = regress((yor(i_sorted(1:nextremes))),Xorig1,alpha);
+STATS1
+bootdat1 = [(yor(i_sorted(1:nextremes))),Xorig1];
+bootb11 = bootstrp(NB, @(x) regress(x(:,1),x(:,2:end)),bootdat1);
+bootCI_largest=prctile(bootb11,[2.5 97.5])
+
+xlabel_periods(1,:)=['1971 - 2021'];
+xlabel_periods(2,:)=['detrended  '];
+xlabel_periods(3,:)=['1971 - 1995'];
+xlabel_periods(4,:)=['1996 - 2021'];
+xlabel_periods(5,:)=['25 driest  '];
+xlabel_periods(6,:)=['25 wettest '];
+
+for ip=1:5
+    
+    ip1=((ip-1)*5)+1;
+    if ip==5
+        ip2=ip1+30;
+    else
+        ip2=ip1+29;
+    end
+    xlabel_periods(ip+6,:)=[num2str(years(ip1)),' - ',num2str(years(ip2))];
+    Xorig1 = [ones(size(PREC_7_9(ip1:ip2),1),1)  (PREC_7_9(ip1:ip2)) ]; %osservati
+    [B_diff_per(:,ip)] = regress((yor(ip1:ip2)),Xorig1,alpha);
+    bootdat = [(yor(ip1:ip2)),Xorig1];
+    bootb = bootstrp(NB, @(x) regress(x(:,1),x(:,2:end)),bootdat);
+    bootCI(ip,:,:)=prctile(bootb,[2.5 97.5]);
+end
+
+%plot
+y=[B1(2) B_detrend(2) B11(2) B21(2) B_smallest(2) B_largest(2) B_diff_per(2,:) ];
+err=ones(1,length(y),2)*NaN;
+err(1,:,1) = [B1(2)-bootCI1(1,2) B_detrend(2)-bootCI_detrend(1,2) B11(2)-bootCI11(1,2) B21(2)-bootCI21(1,2)  ...
+    B_smallest(2)-bootCI_smallest(1,2) B_largest(2)-bootCI_largest(1,2) B_diff_per(2,:)-bootCI(:,1,2)'];
+
+err(1,:,2) = [bootCI1(2,2)-B1(2) bootCI_detrend(2,2)-B_detrend(2) bootCI11(2,2)-B11(2) bootCI21(2,2)-B21(2)  ...
+    bootCI_smallest(2,2)-B_smallest(2) bootCI_largest(2,2)-B_largest(2) bootCI(:,2,2)'-B_diff_per(2,:)];
+
+figure(1); clf; 
+hold on
+for i = 1:length(y)
+    h=bar(i,y(i));
+    if (i>1)
+        errorbar(i, y(:,i), err(:,i,1),err(:,i,2), 'LineStyle', 'none', ...
+        'Color', [210 210 210]/255, 'LineWidth', 1);
+    set(h,'FaceColor',[210 210 210]/255);
+    errorbar(i, y(:,i), err(:,i,1),err(:,i,2), 'LineStyle', 'none', ...
+        'Color', [0 0 0]/255, 'LineWidth', 1);
+    else
+        errorbar(i, y(:,i), err(:,i,1),err(:,i,2), 'LineStyle', 'none', ...
+        'Color', [150 150 150]/255, 'LineWidth', 1);
+    set(h,'FaceColor',[150 150 150]/255);
+    errorbar(i, y(:,i), err(:,i,1),err(:,i,2), 'LineStyle', 'none', ...
+        'Color', [0 0 0]/255, 'LineWidth', 1);
+    end
+end
+xlabel('model calibration periods','Fontsize',font_size)
+ylabel('PREC coefficient','Fontsize',font_size)
+gridxy([],y(:,1),'Color',[121 121 121]/255,'Linestyle','-');
+set(gca,'XTick',1:size(xlabel_periods,1));
+set(gca,'XTickLabel',xlabel_periods,'Fontsize',font_size);
+htick=xticklabel_rotate([],45,[]);
+set(gca,'FontSize',font_size)
+ylim([-1 2.5])
+set(gcf, 'PaperPositionMode', 'auto','renderer', 'painters');
+file=[dir_out,'stability_model_only_prec.eps']
+print( gcf, '-depsc2', file ,'-painters')
+
+
+
 %% stability
 
+yor=log(FIRE);
+Xorig1 = [ones(size(TSMAX_4_10,1),1) (TSMAX_4_10) PREC_7_9]; %osservati
+[B1,BINT,R,RINT,STATS1] = regress((yor),Xorig1,alpha);
+STATS1
+bootdat1 = [(yor),Xorig1];
+bootb1 = bootstrp(NB, @(x) regress(x(:,1),x(:,2:end)),bootdat1);
+bootCI1=prctile(bootb1,[2.5 97.5])
+B1
+
+%detrend
+yor=log(FIRE);
+Xorig1 = [ones(size(TSMAX_4_10,1),1) detrend(TSMAX_4_10) detrend(PREC_7_9)]; %osservati
+[B_detrend,BINT,R,RINT,STATS1] = regress(detrend(yor),Xorig1,alpha);
+STATS1
+bootdat1 = [detrend(yor),Xorig1];
+bootb_detrend = bootstrp(NB, @(x) regress(x(:,1),x(:,2:end)),bootdat1);
+bootCI_detrend=prctile(bootb_detrend,[2.5 97.5])
+B_detrend
+
+%first-half period
+Xorig1 = [ones(size(TSMAX_4_10(1:25),1),1) (TSMAX_4_10(1:25)) (PREC_7_9(1:25))]; %osservati
+[B11] = regress((yor(1:25)),Xorig1,alpha);
+STATS1
+bootdat1 = [(yor(1:25)),Xorig1];
+bootb11 = bootstrp(NB, @(x) regress(x(:,1),x(:,2:end)),bootdat1);
+bootCI11=prctile(bootb11,[2.5 97.5])
+
+%second-half period
+Xorig1 = [ones(size(TSMAX_4_10(26:51),1),1) (TSMAX_4_10(26:51)) (PREC_7_9(26:51))]; %osservati
+[B21] = regress((yor(26:51)),Xorig1,alpha);
+bootdat1 = [(yor(26:51)),Xorig1];
+bootb21 = bootstrp(NB, @(x) regress(x(:,1),x(:,2:end)),bootdat1);
+bootCI21=prctile(bootb21,[2.5 97.5])
+
+%25 coldest years
+nextremes=25;
+[~,i_sorted]=sort(TSMAX_4_10);
+Xorig1 = [ones(size(TSMAX_4_10(1:nextremes),1),1) (TSMAX_4_10(i_sorted(1:nextremes))) (PREC_7_9(i_sorted(1:nextremes)))]; %osservati
+[B_smallest] = regress((yor(i_sorted(1:nextremes))),Xorig1,alpha);
+STATS1
+bootdat1 = [(yor(i_sorted(1:nextremes))),Xorig1];
+bootb_coldest = bootstrp(NB, @(x) regress(x(:,1),x(:,2:end)),bootdat1);
+bootCI_smallest=prctile(bootb_coldest,[2.5 97.5])
+
+%25 hottest years
+[~,i_sorted]=sort(TSMAX_4_10,'descend');
+Xorig1 = [ones(size(TSMAX_4_10(1:nextremes),1),1) (TSMAX_4_10(i_sorted(1:nextremes))) (PREC_7_9(i_sorted(1:nextremes)))]; %osservati
+[B_largest] = regress((yor(i_sorted(1:nextremes))),Xorig1,alpha);
+STATS1
+bootdat1 = [(yor(i_sorted(1:nextremes))),Xorig1];
+bootb11 = bootstrp(NB, @(x) regress(x(:,1),x(:,2:end)),bootdat1);
+bootCI_largest=prctile(bootb11,[2.5 97.5])
+
+
+xlabel_periods(1,:)=['1971 - 2021'];
+xlabel_periods(2,:)=['detrended  '];
+xlabel_periods(3,:)=['1971 - 1995'];
+xlabel_periods(4,:)=['1996 - 2021'];
+xlabel_periods(5,:)=['25 coldest '];
+xlabel_periods(6,:)=['25 hottest '];
+B_diff_per=NaN*zeros(5,3);
+bootCI=NaN*zeros(5,2,2);
+for ip=1:5
+    
+    ip1=((ip-1)*5)+1;
+    if ip==5
+        ip2=ip1+30;
+    else
+        ip2=ip1+29;
+    end
+    xlabel_periods(ip+6,:)=[num2str(years(ip1)),' - ',num2str(years(ip2))];
+    Xorig1 = [ones(size(TSMAX_4_10(ip1:ip2),1),1)  (TSMAX_4_10(ip1:ip2)) (PREC_7_9(ip1:ip2))]; %osservati
+    [B_diff_per(ip,:)] = regress((yor(ip1:ip2)),Xorig1,alpha);
+    bootdat = [(yor(ip1:ip2)),Xorig1];
+    bootb = bootstrp(NB, @(x) regress(x(:,1),x(:,2:end)),bootdat);
+    dum=prctile(bootb,[2.5 97.5]);
+    bootCI(ip,:,1)=dum(:,2)';
+    bootCI(ip,:,2)=dum(:,3)';
+end
+
+%plot
+y=[B1(2) B_detrend(2) B11(2) B21(2) B_smallest(2) B_largest(2) B_diff_per(:,2)' ];
+err=ones(1,length(y),2)*NaN;
+err(1,:,1) = [B1(2)-bootCI1(1,2) B_detrend(2)-bootCI_detrend(1,2) B11(2)-bootCI11(1,2) B21(2)-bootCI21(1,2)  ...
+    B_smallest(2)-bootCI_smallest(1,2) B_largest(2)-bootCI_largest(1,2) (B_diff_per(:,2)-bootCI(:,2,1))'];
+
+err(1,:,2) = [bootCI1(2,2)-B1(2) bootCI_detrend(2,2)-B_detrend(2) bootCI11(2,2)-B11(2) bootCI21(2,2)-B21(2)  ...
+    bootCI_smallest(2,2)-B_smallest(2) bootCI_largest(2,2)-B_largest(2) (bootCI(:,2,1)-B_diff_per(:,2))'];
+
+figure(1); clf; 
+hold on
+for i = 1:length(y)
+    h=bar(i,y(i));
+    if (i>1)
+        errorbar(i, y(:,i), err(:,i,1),err(:,i,2), 'LineStyle', 'none', ...
+        'Color', [210 210 210]/255, 'LineWidth', 1);
+    set(h,'FaceColor',[210 210 210]/255);
+    errorbar(i, y(:,i), err(:,i,1),err(:,i,2), 'LineStyle', 'none', ...
+        'Color', [0 0 0]/255, 'LineWidth', 1);
+    else
+        errorbar(i, y(:,i), err(:,i,1),err(:,i,2), 'LineStyle', 'none', ...
+        'Color', [150 150 150]/255, 'LineWidth', 1);
+    set(h,'FaceColor',[150 150 150]/255);
+    errorbar(i, y(:,i), err(:,i,1),err(:,i,2), 'LineStyle', 'none', ...
+        'Color', [0 0 0]/255, 'LineWidth', 1);
+    end
+end
+xlabel('model calibration periods','Fontsize',font_size)
+ylabel('TS_{max} coefficient','Fontsize',font_size)
+gridxy([],y(:,1),'Color',[121 121 121]/255,'Linestyle','-');
+set(gca,'XTick',1:size(xlabel_periods,1));
+set(gca,'XTickLabel',xlabel_periods,'Fontsize',font_size);
+htick=xticklabel_rotate([],45,[]);
+ylim
+set(gca,'FontSize',font_size)
+ylim([-1 2.5])
+set(gcf, 'PaperPositionMode', 'auto','renderer', 'painters');
+file=[dir_out,'stability_model_tsmax_PREC_7_9.eps']
+print( gcf, '-depsc2', file ,'-painters')
+
+
+
+
+%% prec coef
+
+y=[B1(3) B_detrend(3) B11(3) B21(3) B_smallest(3) B_largest(3) B_diff_per(:,3)' ];
+err=ones(1,length(y),2)*NaN;
+err(1,:,1) = [B1(3)-bootCI1(1,3) B_detrend(3)-bootCI_detrend(1,3) B11(3)-bootCI11(1,3) B21(3)-bootCI21(1,3)  ...
+    B_smallest(3)-bootCI_smallest(1,3) B_largest(3)-bootCI_largest(1,3) (B_diff_per(:,3)-bootCI(:,2,2))'];
+
+err(1,:,2) = [bootCI1(2,3)-B1(3) bootCI_detrend(2,3)-B_detrend(3) bootCI11(2,3)-B11(3) bootCI21(2,3)-B21(3)  ...
+    bootCI_smallest(2,3)-B_smallest(3) bootCI_largest(2,3)-B_largest(3) (bootCI(:,2,2)-B_diff_per(:,3))'];
+
+figure(1); clf; 
+hold on
+for i = 1:length(y)
+    h=bar(i,y(i));
+    if (i>1)
+        errorbar(i, y(:,i), err(:,i,1),err(:,i,2), 'LineStyle', 'none', ...
+        'Color', [210 210 210]/255, 'LineWidth', 1);
+    set(h,'FaceColor',[210 210 210]/255);
+    errorbar(i, y(:,i), err(:,i,1),err(:,i,2), 'LineStyle', 'none', ...
+        'Color', [0 0 0]/255, 'LineWidth', 1);
+    else
+        errorbar(i, y(:,i), err(:,i,1),err(:,i,2), 'LineStyle', 'none', ...
+        'Color', [150 150 150]/255, 'LineWidth', 1);
+    set(h,'FaceColor',[150 150 150]/255);
+    errorbar(i, y(:,i), err(:,i,1),err(:,i,2), 'LineStyle', 'none', ...
+        'Color', [0 0 0]/255, 'LineWidth', 1);
+    end
+end
+xlabel('model calibration periods','Fontsize',font_size)
+ylabel('PREC coefficient','Fontsize',font_size)
+gridxy([],y(:,1),'Color',[121 121 121]/255,'Linestyle','-');
+set(gca,'XTick',1:size(xlabel_periods,1));
+set(gca,'XTickLabel',xlabel_periods,'Fontsize',font_size);
+htick=xticklabel_rotate([],45,[]);
+set(gca,'FontSize',font_size)
+ylim([-1 2.5])
+set(gcf, 'PaperPositionMode', 'auto','renderer', 'painters');
+file=[dir_out,'stability_model_prec_PREC_7_9.eps']
+print( gcf, '-depsc2', file ,'-painters')
+
+
+
+PREC_7_9=PREC_4_10  
+%% stability TMAX correct
+Xorig1 = [ones(size(TSMAX_4_10,1),1) (PREC_7_9)]; %osservati
+[B1,BINT,R,RINT,STATS1] = regress((TSMAX_4_10),Xorig1,alpha);
+%corr(TSMAX_4_10,PREC_7_9)*corr(TSMAX_4_10,PREC_7_9)
+TSMAX_4_10_c = TSMAX_4_10-(Xorig1*B1);
+figure;hold on; plot(TSMAX_4_10)
+plot(TSMAX_4_10_c,'r')
+yor=log(FIRE);
+Xorig1 = [ones(size(TSMAX_4_10,1),1) (TSMAX_4_10_c) PREC_7_9]; %osservati
+[Ball,BINT,R,RINT,STATS1] = regress((yor),Xorig1,alpha);
+STATS1
+bootdat1 = [(yor),Xorig1];
+bootb1 = bootstrp(NB, @(x) regress(x(:,1),x(:,2:end)),bootdat1);
+bootCIall=prctile(bootb1,[2.5 97.5])
+Ball
+
+
+%detrend
+Xorig1 = [ones(size(TSMAX_4_10,1),1) detrend(PREC_7_9)]; %osservati
+[B1,BINT,R,RINT,STATS1] = regress(detrend(TSMAX_4_10),Xorig1,alpha);
+%corr(TSMAX_4_10,PREC_7_9)*corr(TSMAX_4_10,PREC_7_9)
+TSMAX_4_10_c = detrend(TSMAX_4_10)-(Xorig1*B1);
+yor=log(FIRE);
+Xorig1 = [ones(size(TSMAX_4_10,1),1) detrend(TSMAX_4_10_c) detrend(PREC_7_9)]; %osservati
+[B_detrend,BINT,R,RINT,STATS1] = regress(detrend(yor),Xorig1,alpha);
+STATS1
+bootdat1 = [detrend(yor),Xorig1];
+bootb_detrend = bootstrp(NB, @(x) regress(x(:,1),x(:,2:end)),bootdat1);
+bootCI_detrend=prctile(bootb_detrend,[2.5 97.5])
+B_detrend
+
+%first-half period
+Xorig1 = [ones(size(TSMAX_4_10(1:25),1),1) PREC_7_9(1:25)]; %osservati
+[B1,BINT,R,RINT,STATS1] = regress((TSMAX_4_10(1:25)),Xorig1,alpha);
+%corr(TSMAX_4_10,PREC_7_9)*corr(TSMAX_4_10,PREC_7_9)
+TSMAX_4_10_c = (TSMAX_4_10(1:25))-(Xorig1*B1);
+yor=log(FIRE);
+Xorig1 = [ones(size(TSMAX_4_10_c(1:25),1),1) (TSMAX_4_10_c(1:25)) PREC_7_9(1:25)]; %osservati
+[B11,BINT,R,RINT,STATS1] = regress((yor(1:25)),Xorig1,alpha);
+bootdat1 = [(yor(1:25)),Xorig1];
+bootb11 = bootstrp(NB, @(x) regress(x(:,1),x(:,2:end)),bootdat1);
+bootCI11=prctile(bootb11,[2.5 97.5])
+
+%second-half period
+Xorig1 = [ones(size(TSMAX_4_10(26:51),1),1) PREC_7_9(26:51)]; %osservati
+[B1,BINT,R,RINT,STATS1] = regress((TSMAX_4_10(26:51)),Xorig1,alpha);
+TSMAX_4_10_c = (TSMAX_4_10(26:51))-(Xorig1*B1);
+Xorig1 = [ones(size(TSMAX_4_10(26:51),1),1) (TSMAX_4_10_c) PREC_7_9(26:51)]; %osservati
+[B21] = regress((yor(26:51)),Xorig1,alpha);
+bootdat1 = [(yor(26:51)),Xorig1];
+bootb21 = bootstrp(NB, @(x) regress(x(:,1),x(:,2:end)),bootdat1);
+bootCI21=prctile(bootb21,[2.5 97.5])
+
+%25 coldest years
+nextremes=25;
+[~,i_sorted]=sort(TSMAX_4_10);
+Xorig1 = [ones(size(TSMAX_4_10(i_sorted(1:nextremes)),1),1) PREC_7_9(i_sorted(1:nextremes))]; %osservati
+[B1,BINT,R,RINT,STATS1] = regress((TSMAX_4_10(i_sorted(1:nextremes))),Xorig1,alpha);
+TSMAX_4_10_c = (TSMAX_4_10(i_sorted(1:nextremes)))-(Xorig1*B1);
+Xorig1 = [ones(size(TSMAX_4_10(1:nextremes),1),1) (TSMAX_4_10_c) PREC_7_9(i_sorted(1:nextremes))]; %osservati
+[B_smallest] = regress((yor(i_sorted(1:nextremes))),Xorig1,alpha);
+bootdat1 = [(yor(i_sorted(1:nextremes))),Xorig1];
+bootb_coldest = bootstrp(NB, @(x) regress(x(:,1),x(:,2:end)),bootdat1);
+bootCI_smallest=prctile(bootb_coldest,[2.5 97.5])
+
+%25 hottest years
+[~,i_sorted]=sort(TSMAX_4_10,'descend');
+Xorig1 = [ones(size(TSMAX_4_10(i_sorted(1:nextremes)),1),1) PREC_7_9(i_sorted(1:nextremes))]; %osservati
+[B1,BINT,R,RINT,STATS1] = regress((TSMAX_4_10(i_sorted(1:nextremes))),Xorig1,alpha);
+TSMAX_4_10_c = (TSMAX_4_10(i_sorted(1:nextremes)))-(Xorig1*B1);
+Xorig1 = [ones(size(TSMAX_4_10(1:nextremes),1),1) (TSMAX_4_10_c) PREC_7_9(i_sorted(1:nextremes))]; %osservati
+[B_largest] = regress((yor(i_sorted(1:nextremes))),Xorig1,alpha);
+bootdat1 = [(yor(i_sorted(1:nextremes))),Xorig1];
+bootb11 = bootstrp(NB, @(x) regress(x(:,1),x(:,2:end)),bootdat1);
+bootCI_largest=prctile(bootb11,[2.5 97.5])
+
+xlabel_periods(1,:)=['1971 - 2021'];
+xlabel_periods(2,:)=['detrended  '];
+xlabel_periods(3,:)=['1971 - 1995'];
+xlabel_periods(4,:)=['1996 - 2021'];
+xlabel_periods(5,:)=['25 coldest '];
+xlabel_periods(6,:)=['25 hottest '];
+clear B_diff_per
+clear bootCI
+for ip=1:5
+    
+    ip1=((ip-1)*5)+1;
+    if ip==5
+        ip2=ip1+30;
+    else
+        ip2=ip1+29;
+    end
+    xlabel_periods(ip+6,:)=[num2str(years(ip1)),' - ',num2str(years(ip2))];
+    
+    Xorig1 = [ones(size(TSMAX_4_10(ip1:ip2),1),1) (PREC_7_9(ip1:ip2))]; %osservati
+    [B1,BINT,R,RINT,STATS1] = regress((TSMAX_4_10(ip1:ip2)),Xorig1,alpha);
+    TSMAX_4_10_c = (TSMAX_4_10(ip1:ip2))-(Xorig1*B1);
+    Xorig1 = [ones(size(TSMAX_4_10(ip1:ip2),1),1)  (TSMAX_4_10_c) (PREC_7_9(ip1:ip2))]; %osservati
+    [B_diff_per(ip,:)] = regress((yor(ip1:ip2)),Xorig1,alpha);
+    bootdat = [(yor(ip1:ip2)),Xorig1];
+    bootb = bootstrp(NB, @(x) regress(x(:,1),x(:,2:end)),bootdat);
+    dum=prctile(bootb,[2.5 97.5]);
+    bootCI(ip,:,1)=dum(:,2)';
+    bootCI(ip,:,2)=dum(:,3)';
+end
+
+%plot
+y=[Ball(2) B_detrend(2) B11(2) B21(2) B_smallest(2) B_largest(2) B_diff_per(:,2)' ];
+err=ones(1,length(y),2)*NaN;
+err(1,:,1) = [Ball(2)-bootCIall(1,2) B_detrend(2)-bootCI_detrend(1,2) B11(2)-bootCI11(1,2) B21(2)-bootCI21(1,2)  ...
+    B_smallest(2)-bootCI_smallest(1,2) B_largest(2)-bootCI_largest(1,2) (B_diff_per(:,2)-bootCI(:,2,1))'];
+
+err(1,:,2) = [bootCIall(2,2)-Ball(2) bootCI_detrend(2,2)-B_detrend(2) bootCI11(2,2)-B11(2) bootCI21(2,2)-B21(2)  ...
+    bootCI_smallest(2,2)-B_smallest(2) bootCI_largest(2,2)-B_largest(2) (bootCI(:,2,1)-B_diff_per(:,2))'];
+
+figure(1); clf; 
+hold on
+for i = 1:length(y)
+    h=bar(i,y(i));
+    if (i>1)
+        errorbar(i, y(:,i), err(:,i,1),err(:,i,2), 'LineStyle', 'none', ...
+        'Color', [210 210 210]/255, 'LineWidth', 1);
+    set(h,'FaceColor',[210 210 210]/255);
+    errorbar(i, y(:,i), err(:,i,1),err(:,i,2), 'LineStyle', 'none', ...
+        'Color', [0 0 0]/255, 'LineWidth', 1);
+    else
+        errorbar(i, y(:,i), err(:,i,1),err(:,i,2), 'LineStyle', 'none', ...
+        'Color', [150 150 150]/255, 'LineWidth', 1);
+    set(h,'FaceColor',[150 150 150]/255);
+    errorbar(i, y(:,i), err(:,i,1),err(:,i,2), 'LineStyle', 'none', ...
+        'Color', [0 0 0]/255, 'LineWidth', 1);
+    end
+end
+xlabel('model calibration periods','Fontsize',font_size)
+ylabel('TS_{max} coefficient','Fontsize',font_size)
+gridxy([],y(:,1),'Color',[121 121 121]/255,'Linestyle','-');
+set(gca,'XTick',1:size(xlabel_periods,1));
+set(gca,'XTickLabel',xlabel_periods,'Fontsize',font_size);
+htick=xticklabel_rotate([],45,[]);
+ylim
+set(gca,'FontSize',font_size)
+ylim([-1 2.5])
+set(gcf, 'PaperPositionMode', 'auto','renderer', 'painters');
+file=[dir_out,'stability_model_tsmax_corrected.eps']
+print( gcf, '-depsc2', file ,'-painters')
+
+
+
+
+%% prec coef
+y=[Ball(3) B_detrend(3) B11(3) B21(3) B_smallest(3) B_largest(3) B_diff_per(:,3)' ];
+err=ones(1,length(y),2)*NaN;
+err(1,:,1) = [Ball(3)-bootCIall(1,3) B_detrend(3)-bootCI_detrend(1,3) B11(3)-bootCI11(1,3) B21(3)-bootCI21(1,3)  ...
+    B_smallest(3)-bootCI_smallest(1,3) B_largest(3)-bootCI_largest(1,3) (B_diff_per(:,3)-bootCI(:,2,2))'];
+
+err(1,:,2) = [bootCIall(2,3)-Ball(3) bootCI_detrend(2,3)-B_detrend(3) bootCI11(2,3)-B11(3) bootCI21(2,3)-B21(3)  ...
+    bootCI_smallest(2,3)-B_smallest(3) bootCI_largest(2,3)-B_largest(3) (bootCI(:,2,2)-B_diff_per(:,3))'];
+
+figure(1); clf; 
+hold on
+for i = 1:length(y)
+    h=bar(i,y(i));
+    if (i>1)
+        errorbar(i, y(:,i), err(:,i,1),err(:,i,2), 'LineStyle', 'none', ...
+        'Color', [210 210 210]/255, 'LineWidth', 1);
+    set(h,'FaceColor',[210 210 210]/255);
+    errorbar(i, y(:,i), err(:,i,1),err(:,i,2), 'LineStyle', 'none', ...
+        'Color', [0 0 0]/255, 'LineWidth', 1);
+    else
+        errorbar(i, y(:,i), err(:,i,1),err(:,i,2), 'LineStyle', 'none', ...
+        'Color', [150 150 150]/255, 'LineWidth', 1);
+    set(h,'FaceColor',[150 150 150]/255);
+    errorbar(i, y(:,i), err(:,i,1),err(:,i,2), 'LineStyle', 'none', ...
+        'Color', [0 0 0]/255, 'LineWidth', 1);
+    end
+end
+xlabel('model calibration periods','Fontsize',font_size)
+ylabel('PREC coefficient','Fontsize',font_size)
+gridxy([],y(:,1),'Color',[121 121 121]/255,'Linestyle','-');
+set(gca,'XTick',1:size(xlabel_periods,1));
+set(gca,'XTickLabel',xlabel_periods,'Fontsize',font_size);
+htick=xticklabel_rotate([],45,[]);
+set(gca,'FontSize',font_size)
+ylim([-1 2.5])
+set(gcf, 'PaperPositionMode', 'auto','renderer', 'painters');
+file=[dir_out,'stability_model_tsmax_correct_prec.eps']
+print( gcf, '-depsc2', file ,'-painters')
+
+
+
+
+%% only tmax
 yor=log(FIRE);
 Xorig1 = [ones(size(TSMAX_4_10,1),1) (TSMAX_4_10)]; %osservati
 [B1,BINT,R,RINT,STATS1] = regress((yor),Xorig1,alpha);
@@ -431,7 +936,7 @@ xlabel_periods(3,:)=['1971 - 1995'];
 xlabel_periods(4,:)=['1996 - 2021'];
 xlabel_periods(5,:)=['25 coldest '];
 xlabel_periods(6,:)=['25 hottest '];
-
+clear B_diff_per
 for ip=1:5
     
     ip1=((ip-1)*5)+1;
@@ -482,6 +987,7 @@ set(gca,'XTick',1:size(xlabel_periods,1));
 set(gca,'XTickLabel',xlabel_periods,'Fontsize',font_size);
 htick=xticklabel_rotate([],45,[]);
 set(gca,'FontSize',font_size)
+ylim([-1 2.5])
 set(gcf, 'PaperPositionMode', 'auto','renderer', 'painters');
 file=[dir_out,'stability_model_only_tsmax.eps']
 print( gcf, '-depsc2', file ,'-painters')
